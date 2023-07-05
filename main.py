@@ -122,6 +122,9 @@ async def submit_feedback(feedback: str):
     # Return a success message
     return {"message": "Feedback submitted successfully."}
 
+@app.route("/")
+def main():
+    return "Hello World!"
 
 if __name__ == "__main__":
     import uvicorn
