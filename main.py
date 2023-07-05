@@ -13,7 +13,7 @@ base_url = os.getenv("BASE_URL")
 app = FastAPI()
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    return "Hello, am your virtual friend"
 
 # Set your OpenAI API key
 openai.api_key = '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'
@@ -26,12 +26,12 @@ class Message(BaseModel):
 
 @app.get("/ask-user-name")
 def ask_for_user_name():
-    user_name = input("Chatbot:Hey!! What is your name?\n ")
+    user_name = input("Hey!! What is your name?\n ")
     return f"Nice to meet you, { user_name}"
 
 @app.get("/ask-chatbot-name")
 def ask_for_chatbot_name():
-    chatbot_name = input("Chatbot: What would you like to call me?\n ")
+    chatbot_name = input("What would you like to call me?\n ")
     return f"{chatbot_name} is a nice name. Thank you!"
 async def chat_with_gpt(message: str, temperature: float):
     try:
