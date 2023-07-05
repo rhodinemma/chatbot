@@ -52,7 +52,8 @@ async def process_user_input(message: str, user_name: str = "User"):
     positive_triggers = ["amazing", "happy", "good", "great", "happy", "better", "hope", "excited"]
     negative_triggers = ["sad", "lonely", "depressed", "anxious", "stressed", "I feel stuck and helpless.", "I'm such a failure."]
     neutral_triggers = ["do not belong", "kill myself", "die", "end it", "There's no point in living anymore",  "Everyone would be better off without me" , "There's no escape from this pain","I can't see any way out of this.", "I can't take it anymore",  "I wish I could just disappear."]
-
+    topic_triggers = ["favorite color", "i want to cry", "sorry", "hello","how are you", "hi", "hey" "weather", "music","okay", "food", "hobby", "weekend plans", "movie", "book", "travel", "pet", "sport", "dream", "goal", "inspire", "family", "friend", "work", "school", "vacation"]
+    greet_trigger=["hey"]+["hello"]+["hi"]+["whatsup"]+["yoo"]+["gwe"]
     if any(trigger in message.lower() for trigger in positive_triggers):
         # User expressed positive emotions
         return f"I'm glad to hear that, {user_name}! Is there anything else i can help you with?"
@@ -70,13 +71,94 @@ async def process_user_input(message: str, user_name: str = "User"):
 
         response += "\nIf you have any specific concerns or questions, feel free to ask."
         return response
+    if any(trigger in message.lower() for trigger in greet_trigger):
+        return f"Hi! Whatsup,{user_name}?"
 
     if any(trigger in message.lower() for trigger in negative_triggers):
         # User expressed neutral emotions
         return f"Feel free to share, {user_name}. Am a good listener"
 
-    # Use OpenAI API for generating responses to dynamic queries
-    temperature = 0.5  # Adjust the temperature for response randomness
+    if any(trigger in message.lower() for trigger in topic_triggers):
+        # Respond to specific topic-related triggers
+        if "favorite color" in message.lower():
+            return f"My favorite color is blue."
+        if "i want to cry" in message.lower():
+            return f"Oh sorry {user_name}, what's wrong?"
+        
+        if "sorry" in message.lower():
+            return f"No problem, it's ok."
+             
+        #if ("hello"| "hey") in message.lower():
+        #    return f"Hello, how are you,{user_name}?"
+        
+        if "weather" in message.lower():
+            return f"The weather is lovely today! What's the weather like where you are, {user_name}?"
+   
+        
+        if"how are you" in message.lower():
+            return f"Am fine, you?"
+        
+       
+        # if "hi" in message.lower():
+       #     return f"Hi, whatsup,{user_name}?"
+        if "music" in message.lower():
+            return f"I love listening to music! What's your favorite genre of music, {user_name}?"
+        
+        if "okay" in message.lower():
+            return f"What are you doing?"
+        
+        
+        
+        if "food" in message.lower():
+            return f"I enjoy trying different cuisines. What's your favorite dish, {user_name}?"
+
+        if "hobby" in message.lower():
+            return f"I have many hobbies, but one of my favorites is reading. What's your favorite hobby, {user_name}?"
+
+        if "weekend plans" in message.lower():
+            return f"I'm looking forward to relaxing over the weekend. Do you have any exciting plans, {user_name}?"
+
+        if "movie" in message.lower():
+            return f"I enjoy watching movies! What's your favorite movie, {user_name}?"
+
+        if "book" in message.lower():
+            return f"I'm an avid reader. Do you have a favorite book, {user_name}?"
+
+        if "travel" in message.lower():
+            return f"I love exploring new places! Where is your dream travel destination, {user_name}?"
+
+        if "pet" in message.lower():
+            return f"Pets are wonderful companions! Do you have a pet, {user_name}?"
+
+        if "sport" in message.lower():
+            return f"I enjoy playing and watching sports! What's your favorite sport,{user_name}?"
+
+        if "dream" in message.lower():
+            return f"Dreams are powerful! What is your biggest dream, {user_name}?"
+
+        if "goal" in message.lower():
+            return f"Setting goals can help you achieve great things! What is one of your current goals, {user_name}?"
+
+        if "inspire" in message.lower():
+            return f"Inspiration is everywhere! Is there someone or something that inspires you, {user_name}?"
+
+        if "family" in message.lower():
+            return f"Family is important. Tell me something about your family, {user_name}."
+
+        if "friend" in message.lower():
+            return f"Friends make life more meaningful. Do you have a close friend you would like to share about, {user_name}?"
+
+        if "work" in message.lower():
+            return f"Work is a significant part of our lives. What do you do for work, {user_name}?"
+
+        if "school" in message.lower():
+            return f"Education is valuable. Are you currently studying or have any memorable school experiences, {user_name}?"
+
+        if "vacation" in message.lower():
+            return f"Vacations are a great way to relax and explore. Do you have a favorite vacation destination, {user_name}?"
+   
+# Default response for other cases# Use OpenAI API for generating responses to dynamic queries
+    temperature = 0.8  # Adjust the temperature for response randomness
     response = await chat_with_gpt(message, temperature)
     return response
 
