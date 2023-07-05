@@ -76,7 +76,7 @@ async def process_user_input(message: str, user_name: str = "User"):
         return f"Feel free to share, {user_name}. Am a good listener"
 
     # Use OpenAI API for generating responses to dynamic queries
-    temperature = 0.8  # Adjust the temperature for response randomness
+    temperature = 0.5  # Adjust the temperature for response randomness
     response = await chat_with_gpt(message, temperature)
     return response
 
