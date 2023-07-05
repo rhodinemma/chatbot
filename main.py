@@ -122,8 +122,8 @@ async def submit_feedback(feedback: str):
     # Return a success message
     return {"message": "Feedback submitted successfully."}
 
-@app.route("/")
-def main():
+@app.get("/")
+def greet():
     return "Hello World!"
 
 if __name__ == "__main__":
