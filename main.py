@@ -6,7 +6,6 @@ import os
 import uvicorn
 
 
-
 load_dotenv()
 api_key = os.environ['API_KEY']
 base_url = os.getenv("BASE_URL")
@@ -25,7 +24,15 @@ class Message(BaseModel):
     user_name: str
     is_questionnaire: bool = False
 
+@app.get("/ask-user-name")
+def ask_for_user_name():
+    user_name = input("Chatbot:Hey!! What is your name?\n ")
+    return f"Nice to meet you, { user_name}"
 
+@app.get("/ask-chatbot-name")
+def ask_for_chatbot_name():
+    chatbot_name = input("Chatbot: What would you like to call me?\n ")
+    return f"{chatbot_name} is a nice name. Thank you!"
 async def chat_with_gpt(message: str, temperature: float):
     try:
         response = openai.Completion.create(
@@ -92,22 +99,17 @@ async def process_user_input(message: str, user_name: str = "User"):
         #    return f"Hello, how are you,{user_name}?"
         
         if "weather" in message.lower():
-            return f"The weather is lovely today! What's the weather like where you are, {user_name}?"
+            return f"I am not sure! What's the weather like where you are, {user_name}?"
    
         
         if"how are you" in message.lower():
             return f"Am fine, you?"
         
-       
-        # if "hi" in message.lower():
-       #     return f"Hi, whatsup,{user_name}?"
         if "music" in message.lower():
             return f"I love listening to music! What's your favorite genre of music, {user_name}?"
         
         if "okay" in message.lower():
             return f"What are you doing?"
-        
-        
         
         if "food" in message.lower():
             return f"I enjoy trying different cuisines. What's your favorite dish, {user_name}?"
@@ -125,7 +127,7 @@ async def process_user_input(message: str, user_name: str = "User"):
             return f"I'm an avid reader. Do you have a favorite book, {user_name}?"
 
         if "travel" in message.lower():
-            return f"I love exploring new places! Where is your dream travel destination, {user_name}?"
+            return f"I love learning about new places! Where is your dream travel destination, {user_name}?"
 
         if "pet" in message.lower():
             return f"Pets are wonderful companions! Do you have a pet, {user_name}?"
