@@ -4,6 +4,10 @@ from dotenv import load_dotenv
 import openai
 import os
 import uvicorn
+from pymongo import MongoClient
+from bson.objectid import ObjectId
+import re
+
 
 
 load_dotenv()
@@ -22,24 +26,25 @@ openai.api_key = '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'
 class Message(BaseModel):
     message: str
     user_name: str
-    is_questionnaire: bool = False
+    chatbot_name: str
 
 @app.get("/ask-user-name")
 def ask_for_user_name():
-    user_name = input("Hey!! What is your name?\n ")
+    user_name = input("Hey! What is your name?\n ")
     return f"Nice to meet you, { user_name}"
 
 @app.get("/ask-chatbot-name")
 def ask_for_chatbot_name():
-    chatbot_name = input("What would you like to call me?\n ")
+    chatbot_name = input("Chatbot: What would you like to call me?\n ")
     return f"{chatbot_name} is a nice name. Thank you!"
+
 async def chat_with_gpt(message: str, temperature: float):
     try:
         response = openai.Completion.create(
             engine="text-davinci-003",  # Specify the OpenAI engine
             prompt=message,
             temperature=temperature,
-            max_tokens=100,  # Adjust the max tokens as per your requirement
+            max_tokens=150,  # Adjust the max tokens as per your requirement
         )
         return response.choices[0].text.strip()
 
@@ -54,13 +59,22 @@ mental_health_hotlines = {
     "Butabika National Referral Hospital": "+256 414 505 000"
 }
 
-async def process_user_input(message: str, user_name: str = "User"):
+async def process_user_input(message: str, user_name: str = "User", friend_name: str ="Friend"):
     # Define the triggers for different emotions
     positive_triggers = ["amazing", "happy", "good", "great", "happy", "better", "hope", "excited"]
     negative_triggers = ["sad", "lonely", "depressed", "anxious", "stressed", "I feel stuck and helpless.", "I'm such a failure."]
     neutral_triggers = ["do not belong", "kill myself", "die", "end it", "There's no point in living anymore",  "Everyone would be better off without me" , "There's no escape from this pain","I can't see any way out of this.", "I can't take it anymore",  "I wish I could just disappear."]
     topic_triggers = ["favorite color", "i want to cry", "sorry", "hello","how are you", "hi", "hey" "weather", "music","okay", "food", "hobby", "weekend plans", "movie", "book", "travel", "pet", "sport", "dream", "goal", "inspire", "family", "friend", "work", "school", "vacation"]
     greet_trigger=["hey"]+["hello"]+["hi"]+["whatsup"]+["yoo"]+["gwe"]
+    friend_triggers = ["friend's name", "my friend's name","her name","his name", "friend is called"]
+    sleep_triggers=["good night", 'sleep', "sleepy","good morning", "exhausted", "tired","thank"]
+    if any(trigger in message.lower() for trigger in friend_triggers):
+       #Extract the friend's name from the message
+         friend_name = extract_friend_name(message)
+    # Store the friend's name in the conversation history
+         conversation_collection.insert_one({"user_name": user_name, "message": friend_name})
+         return f"Nice! {friend_name} is a great name. What does {friend_name} like?"
+
     if any(trigger in message.lower() for trigger in positive_triggers):
         # User expressed positive emotions
         return f"I'm glad to hear that, {user_name}! Is there anything else i can help you with?"
@@ -94,14 +108,10 @@ async def process_user_input(message: str, user_name: str = "User"):
         
         if "sorry" in message.lower():
             return f"No problem, it's ok."
-             
-        #if ("hello"| "hey") in message.lower():
-        #    return f"Hello, how are you,{user_name}?"
-        
+    
         if "weather" in message.lower():
             return f"I am not sure! What's the weather like where you are, {user_name}?"
    
-        
         if"how are you" in message.lower():
             return f"Am fine, you?"
         
@@ -158,92 +168,110 @@ async def process_user_input(message: str, user_name: str = "User"):
 
         if "vacation" in message.lower():
             return f"Vacations are a great way to relax and explore. Do you have a favorite vacation destination, {user_name}?"
-   
+    if any(trigger in message.lower() for trigger in sleep_triggers):
+        if ("good night") in message.lower():
+            return f"Good night {user_name}. Sleep tight!"
+        
+        if ("sleep") in message.lower():
+            return f"Take a nap. You must be tired."
+        
+        if ("sleepy") in message.lower():
+            return f"I think it's best you lie down and sleep"
+        if ("good morning") in message.lower():
+            return f"Good morning, {user_name}. How was your night?"
+        if ("exhausted") in message.lower():
+            return f"What have you been doing?"
+        
+        if ("tired") in message.lower():
+            return f"What is making you tired?"
+        if ("thank") in message.lower():
+            return f"You're welcome, {user_name}. Is there anything else you want to share?"
 # Default response for other cases# Use OpenAI API for generating responses to dynamic queries
-    temperature = 0.8  # Adjust the temperature for response randomness
+    temperature = 0.4  # Adjust the temperature for response randomness
     response = await chat_with_gpt(message, temperature)
     return response
 
-async def process_questionnaire(message: str):
-    # Define the questionnaire questions and options
-    questionnaire = {
-        "depression": {
-            "questions": [
-                "Have you been feeling sad, down, or hopeless?",
-                "Have you lost interest or pleasure in activities you used to enjoy?",
-                "Have you been experiencing changes in appetite or weight?",
-            ],
-            "options": ["Yes", "No"],
-        },
-        "anxiety": {
-            "questions": [
-                "Have you been feeling excessively worried or anxious?",
-                "Have you been experiencing restlessness or irritability?",
-                "Have you been having trouble sleeping or staying asleep?",
-            ],
-            "options": ["Yes", "No"],
-        },
-        "ptsd": {
-            "questions": [
-                "Have you been having distressing thoughts or memories about a past traumatic event?",
-                "Have you been avoiding situations or activities that remind you of the trauma?",
-                "Have you been experiencing heightened arousal, such as being easily startled or having difficulty concentrating?",
-            ],
-            "options": ["Yes", "No"],
-        },
-    }
 
-    # Process the questionnaire responses
-    response = message.lower().strip()
-    if response in ["yes", "no"]:
-        if response == "yes":
-            # User answered "Yes" to at least one question
-            return "Based on your responses, it's important to seek professional help. We recommend contacting a mental health professional for further assistance."
-        else:
-            # User answered "No" to all questions
-            return "It seems like you are not currently experiencing significant symptoms. However, if you have any concerns, it's always a good idea to reach out to a mental health professional for support."
-    else:
-        # Invalid response
-        return "Please respond with 'Yes' or 'No' to the questionnaire."
-""""   
-from pymongo import MongoClient
+ 
+uri = "mongodb+srv://cyn:CeLZx8fGEsdS0xuJ@atlascluster.w68jdko.mongodb.net/?retryWrites=true&w=majority"
+# Create the database connection
+client = MongoClient(uri)
 
 # Create the database connection
-client = MongoClient("mongodb+srv://cyn:<lMS8DiUTpfQtW4TU>@atlascluster.w68jdko.mongodb.net/?retryWrites=true&w=majority")
+#client = MongoClient("mongodb+srv://cyn:<lMS8DiUTpfQtW4TU>@atlascluster.w68jdko.mongodb.net/?retryWrites=true&w=majority")
 
 # Select the database
-db = client["User_chats"]
+db = client["chatbot_db"]
 
-# Select the collection (equivalent to table in SQL)
-collection = db["feedback_collection"]    
+conversation_collection = db["conversation_history"]
 
-class FeedbackRequest(BaseModel):
-    content: str
-    
-@app.post("/feedback")
-async def submit_feedback(feedback: FeedbackRequest):
-    try:
-        # Create a new document (equivalent to a row in SQL)
-        document = {"content": feedback.content}
 
-        # Insert the document into the collection
-        collection.insert_one(document)
+# Function to extract friend's name from the message
+def extract_friend_name(message: str) -> str:
+    pattern = r"my friend['s]* name is ([A-Za-z]+)"
+    match = re.search(pattern, message, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    else:
+        return ""
 
-        return {"message": "Feedback submitted successfully."}
+# Select the collection (equivalent to a table in SQL)
+collection = db["names_collection"]
 
-    except Exception as e:
-        # Handle any errors
-        return {"message": "Failed to submit feedback."}
-
-"""
 @app.post("/chat")
 async def chat(message: Message):
-    if message.is_questionnaire:
-        response = await process_questionnaire(message.message)
-    else:
-        response = await process_user_input(message.message, message.user_name)
+  try:
 
-    return {"response": response}
+         # Retrieve the stored chatbot and user names from the database
+        chatbot_document = collection.find_one({"name_type": "chatbot"})
+        chatbot_name = chatbot_document["name"] if chatbot_document else None
+          
+        user_document = collection.find_one({"name_type": "user"})
+        user_name = user_document["name"] if user_document else None
+           # If the user name is not set, prompt for it 
+        if not message.user_name:
+                user_name = input("Hey!! What is your name?\n ")
+                collection.update_one({"name_type": "user"}, {"$set": {"name": user_name}})
+         # If the chatbot name is not set, prompt for it 
+        if not message.chatbot_name:
+                 chatbot_name = input(f"Nice meeting you {user_name}, what would you like to call me?\n ")
+                 collection.update_one({"name_type": "chatbot"}, {"$set": {"name": chatbot_name}})
+             # Save user input to the conversation history collection
+        conversation_collection.insert_one({"user_name": user_name, "message": message.message})
+
+        
+        # Extract friend's name from the message, if mentioned
+        friend_name = extract_friend_name(message.message)
+        if friend_name:
+            # Store friend's name in the conversation history
+            conversation_collection.insert_one({"user_name": user_name, "message": friend_name})
+
+        # Retrieve the conversation history from the collection
+        conversation_history = list(conversation_collection.find())
+                
+        # Remove ObjectId values from the conversation history
+        conversation_history_cleaned = []
+        for doc in conversation_history:
+            doc["_id"] = str(doc["_id"])
+            conversation_history_cleaned.append(doc)
+     # Concatenate conversation history as a single string
+        conversation = "\n".join([f"{doc['user_name']}: {doc['message']}" for doc in conversation_history_cleaned])
+
+        # Use conversation history for generating responses
+        temperature = 0.4  # Adjust the temperature for response randomness
+        response = await chat_with_gpt(conversation, temperature)
+
+        # Save chatbot response to the conversation history collection
+        conversation_collection.insert_one({"user_name": chatbot_name, "message": response})
+
+       # return {"response": response}
+
+    
+        response = await process_user_input(message.message, message.user_name)
+        return  response, conversation_history_cleaned
+  except Exception as e:
+   raise HTTPException(status_code=500, detail=str(e))
+
 
 
 if __name__ == "__main__":
