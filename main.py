@@ -193,7 +193,7 @@ async def process_user_input(message: str, user_name: str = "User", friend_name:
 
 
  
-uri = "mongodb+srv://cyn:CeLZx8fGEsdS0xuJ@atlascluster.w68jdko.mongodb.net/?retryWrites=true&w=majority"
+uri = "mongodb+srv://rhodzeey:12345@cluster0.tpb0e.mongodb.net/nodeMastery?retryWrites=true&w=majority"
 # Create the database connection
 client = MongoClient(uri)
 
