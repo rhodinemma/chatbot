@@ -5,3 +5,4 @@ textblob==0.15.3
 python-dotenv==0.19.1
 openai==0.27.8
 uvicorn==0.15.0
+pymongo[srv]==3.12.0
