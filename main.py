@@ -20,24 +20,13 @@ def read_root():
 openai.api_key = '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'
 
 
+class Message(BaseModel):
+    role: str
+    content:str
+
 class Conversation(BaseModel):
-    messages: list
-    #user_name: str
-    #is_questionnaire: bool = False
+    messages: list[Message]
 
-async def chat_with_gpt(conversation):
-    try:
-        response = openai.Completion.create(
-            engine="text-davinci-003",  # Specify the OpenAI engine
-            messages=conversation,
-            temperature=random.uniform(0.3,0.8),
-            max_tokens=100,  # Adjust the max tokens as per your requirement
-        )
-        return response.choices[0].message['content']
-
-    except Exception as exc:
-        error_message = f"Failed to communicate with chatbot: {str(exc)}"
-        raise HTTPException(status_code=500, detail=error_message)
 
 # Uganda Mental Health Hotlines
 mental_health_hotlines = {
@@ -45,7 +34,7 @@ mental_health_hotlines = {
     "Mental Health Uganda": "+256 775 951543",
     "Butabika National Referral Hospital": "+256 414 505 000"
 }
-async def process_user_input(message):
+async def process_user_input(content:str, temperature:float):
     # Define the triggers for different emotions
     positive_triggers = ["amazing", "happy",  "great", "happy", "better", "hope", "excited"]
     negative_triggers = ["sad", "lonely", "depressed", "anxious", "stressed", "I feel stuck and helpless.", "I'm such a failure."]
@@ -53,12 +42,12 @@ async def process_user_input(message):
     topic_triggers = ["favorite color", "i want to cry", "sorry", "hello","how are you", "hi", "hey" "weather", "music","okay", "food", "hobby", "weekend plans", "movie", "book", "travel", "pet", "sport", "dream", "goal", "inspire", "family", "work", "school", "vacation"]
     greet_trigger=["hey"]+["hello"]+["hi"]+["whatsup"]+["yoo"]+["gwe"]
     sleep_triggers=["night", 'sleep', "sleepy","morning", "exhausted", "tired","thank"]
-  
-    if any(trigger in message.lower() for trigger in positive_triggers):
+    temperature=random.uniform(0.3,0.8)
+    if any(trigger in content.lower() for trigger in positive_triggers):
         # User expressed positive emotions
         return f"I'm glad to hear that! Is there anything else i can help you with?"
 
-    if any(trigger in message.lower() for trigger in neutral_triggers):
+    if any(trigger in content.lower() for trigger in neutral_triggers):
         # User expressed negative emotions
         response = f"I'm here to listen and support you. If you need immediate assistance, you can reach out to the following mental health hotlines in Uganda:\n\n"
         
@@ -71,113 +60,141 @@ async def process_user_input(message):
 
         response += "\nIf you have any specific concerns or questions, feel free to ask."
         return response
-    if any(trigger in message.lower() for trigger in greet_trigger):
+    if any(trigger in content.lower() for trigger in greet_trigger):
         return f"Hi! Whatsup"
 
-    if any(trigger in message.lower() for trigger in negative_triggers):
+    if any(trigger in content.lower() for trigger in negative_triggers):
         # User expressed neutral emotions
         return f"Feel free to share. Am a good listener"
 
-    if any(trigger in message.lower() for trigger in topic_triggers):
+    if any(trigger in content.lower() for trigger in topic_triggers):
         # Respond to specific topic-related triggers
-        if "favorite color" in message.lower():
+        if "favorite color" in content.lower():
             return f"My favorite color is blue."
-        if "i want to cry" in message.lower():
+        if "i want to cry" in content.lower():
             return f"Oh sorry, what's wrong?"
         
-        if "sorry" in message.lower():
+        if "sorry" in content.lower():
             return f"No problem, it's ok."
     
-        if "weather" in message.lower():
+        if "weather" in content.lower():
             return f"I am not sure! What's the weather like where you are?"
    
-        if"how are you" in message.lower():
+        if"how are you" in content.lower():
             return f"Am fine, you?"
         
-        if "music" in message.lower():
+        if "music" in content.lower():
             return f"I love listening to music! What's your favorite genre of music?"
         
-        if "okay" in message.lower():
+        if "okay" in content.lower():
             return f"What are you doing?"
         
-        if "food" in message.lower():
+        if "food" in content.lower():
             return f"I enjoy trying different cuisines. What's your favorite dish?"
 
-        if "hobby" in message.lower():
+        if "hobby" in content.lower():
             return f"I have many hobbies, but one of my favorites is reading. What's your favorite hobby?"
 
-        if "weekend plans" in message.lower():
+        if "weekend plans" in content.lower():
             return f"I'm looking forward to relaxing over the weekend. Do you have any exciting plans?"
 
-        if "movie" in message.lower():
+        if "movie" in content.lower():
             return f"I enjoy watching movies! What's your favorite movie?"
 
-        if "book" in message.lower():
+        if "book" in content.lower():
             return f"I'm an avid reader. Do you have a favorite book?"
 
-        if "travel" in message.lower():
+        if "travel" in content.lower():
             return f"I love learning about new places! Where is your dream travel destination?"
 
-        if "pet" in message.lower():
+        if "pet" in content.lower():
             return f"Pets are wonderful companions! Do you have a pet?"
 
-        if "sport" in message.lower():
+        if "sport" in content.lower():
             return f"I enjoy playing and watching sports! What's your favorite sport?"
 
-        if "dream" in message.lower():
+        if "dream" in content.lower():
             return f"Dreams are powerful! What is your biggest dream?"
 
-        if "goal" in message.lower():
+        if "goal" in content.lower():
             return f"Setting goals can help you achieve great things! What is one of your current goals?"
 
-        if "inspire" in message.lower():
+        if "inspire" in content.lower():
             return f"Inspiration is everywhere! Is there someone or something that inspires you?"
 
-        if "family" in message.lower():
+        if "family" in content.lower():
             return f"Family is important. Tell me something about your family."
 
        # if "friend" in message.lower():
          #   return f"Friends make life more meaningful. Do you have a close friend you would like to share about?"
 
-        if "work" in message.lower():
+        if "work" in content.lower():
             return f"Work is a significant part of our lives. What do you do for work?"
 
-        if "school" in message.lower():
+        if "school" in content.lower():
             return f"Education is valuable. Are you currently studying or have any memorable school experiences?"
 
-        if "vacation" in message.lower():
+        if "vacation" in content.lower():
             return f"Vacations are a great way to relax and explore. Do you have a favorite vacation destination?"
-    if any(trigger in message.lower() for trigger in sleep_triggers):
-        if ("night") in message.lower():
+    if any(trigger in content.lower() for trigger in sleep_triggers):
+        if ("night") in content.lower():
             return f"Good night. Sleep tight!"
         
-        if ("sleep") in message.lower():
+        if ("sleep") in content.lower():
             return f"Take a nap. You must be tired."
         
-        if ("sleepy") in message.lower():
+        if ("sleepy") in content.lower():
             return f"I think it's best you lie down and sleep"
-        if ("morning") in message.lower():
+        if ("morning") in content.lower():
             return f"Good morning. How was your night?"
-        if ("exhausted") in message.lower():
+        if ("exhausted") in content.lower():
             return f"What have you been doing?"
         
-        if ("tired") in message.lower():
+        if ("tired") in content.lower():
             return f"What is making you tired?"
-        if ("thank") in message.lower():
+        if ("thank") in content.lower():
             return f"You're welcome. Is there anything else you want to share?"
    
 # Default response for other cases# Use OpenAI API for generating responses to dynamic queries
    # temperature = random.uniform(0.3, 0.8) # Adjust the temperature for response randomness
-    response = await chat_with_gpt(message)
+    response = await chat_with_gpt(content, temperature)
     return response
 
+async def chat_with_gpt(content:str, temperature:float):
+    try:
+        temperature=random.uniform(0.3,0.8)
+        response = openai.Completion.create(
+            engine="text-davinci-003",  # Specify the OpenAI engine
+            prompt=content,
+            temperature=temperature,
+            max_tokens=100,  # Adjust the max tokens as per your requirement
+        )
+        return response.choices[0].text.strip()
 
+
+    except Exception as exc:
+        error_message = f"Failed to communicate with chatbot: {str(exc)}"
+        raise HTTPException(status_code=500, detail=error_message)
+    
 @app.post("/chat")
 async def chat(conversation: Conversation):
-    user_message = conversation.messages[-1]['content']
-    response = await process_user_input(user_message)
-    conversation.messages.append({"role": "system", "content": response})
+    # Retrieve the user's message from the conversation
+    user_message = conversation.messages[-1].content
+
+    # Process the user's message based on the role
+    if conversation.messages[-1].role == "user":
+        response = await process_user_input(user_message, temperature=random.uniform(0.3,0.8))
+    else:
+        # Handle system or other roles if needed
+        response = "Unhandled role"
+
+    # Create a new message object with the bot's response
+    bot_message = Message(role="bot", content=response)
+    conversation.messages.append(bot_message)
+
+    # Return the response
     return {"response": response}
+
 if __name__ == "__main__":
     import uvicorn
 
