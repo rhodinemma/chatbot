@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from typing import List
 import openai
 import os
 import uvicorn
@@ -25,7 +26,7 @@ class Message(BaseModel):
     content:str
 
 class Conversation(BaseModel):
-    messages: list[Message]
+    messages: List[Message]
 
 
 # Uganda Mental Health Hotlines
