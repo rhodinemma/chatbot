@@ -1,24 +1,25 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from typing import List
 import openai
 import os
 import uvicorn
-import random
 
 
+
+
+DEFAULT_TEMPERATURE = 0.3  # Default temperature value
 load_dotenv()
 api_key = os.environ['API_KEY']
 base_url = os.getenv("BASE_URL")
+# Set your OpenAI API key
+openai.api_key = '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'
 
 app = FastAPI()
 @app.get("/")
 def read_root():
     return "Hello, am your virtual friend"
 
-# Set your OpenAI API key
-openai.api_key = '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'
 
 
 class Message(BaseModel):
@@ -26,7 +27,9 @@ class Message(BaseModel):
     content:str
 
 class Conversation(BaseModel):
-    messages: List[Message]
+    messages: list[Message]
+
+
 
 
 # Uganda Mental Health Hotlines
@@ -35,7 +38,7 @@ mental_health_hotlines = {
     "Mental Health Uganda": "+256 775 951543",
     "Butabika National Referral Hospital": "+256 414 505 000"
 }
-async def process_user_input(content:str, temperature:float):
+async def process_user_input(content:str, temperature:float=None):
     # Define the triggers for different emotions
     positive_triggers = ["amazing", "happy",  "great", "happy", "better", "hope", "excited"]
     negative_triggers = ["sad", "lonely", "depressed", "anxious", "stressed", "I feel stuck and helpless.", "I'm such a failure."]
@@ -43,7 +46,9 @@ async def process_user_input(content:str, temperature:float):
     topic_triggers = ["favorite color", "i want to cry", "sorry", "hello","how are you", "hi", "hey" "weather", "music","okay", "food", "hobby", "weekend plans", "movie", "book", "travel", "pet", "sport", "dream", "goal", "inspire", "family", "work", "school", "vacation"]
     greet_trigger=["hey"]+["hello"]+["hi"]+["whatsup"]+["yoo"]+["gwe"]
     sleep_triggers=["night", 'sleep', "sleepy","morning", "exhausted", "tired","thank"]
-    temperature=random.uniform(0.3,0.8)
+    if temperature is None:
+        temperature = float(os.getenv("TEMPERATURE", DEFAULT_TEMPERATURE))
+
     if any(trigger in content.lower() for trigger in positive_triggers):
         # User expressed positive emotions
         return f"I'm glad to hear that! Is there anything else i can help you with?"
@@ -136,10 +141,10 @@ async def process_user_input(content:str, temperature:float):
             return f"Education is valuable. Are you currently studying or have any memorable school experiences?"
 
         if "vacation" in content.lower():
-            return f"Vacations are a great way to relax and explore. Do you have a favorite vacation destination?"
+          return f"Vacations are a great way to relax and explore. Do you have a favorite vacation destination?"
     if any(trigger in content.lower() for trigger in sleep_triggers):
-        if ("night") in content.lower():
-            return f"Good night. Sleep tight!"
+       # if ("night") in content.lower():
+        #    return f"Good night. Sleep tight!"
         
         if ("sleep") in content.lower():
             return f"Take a nap. You must be tired."
@@ -161,40 +166,39 @@ async def process_user_input(content:str, temperature:float):
     response = await chat_with_gpt(content, temperature)
     return response
 
-async def chat_with_gpt(content:str, temperature:float):
+async def chat_with_gpt(content, temperature: float):
     try:
-        temperature=random.uniform(0.3,0.8)
         response = openai.Completion.create(
-            engine="text-davinci-003",  # Specify the OpenAI engine
+            engine="text-davinci-003",
             prompt=content,
             temperature=temperature,
-            max_tokens=100,  # Adjust the max tokens as per your requirement
+            max_tokens=100,
         )
         return response.choices[0].text.strip()
 
-
-    except Exception as exc:
-        error_message = f"Failed to communicate with chatbot: {str(exc)}"
+    except openai.error.APIError as e:
+        error_message = f"OpenAI API Error: {str(e)}"
         raise HTTPException(status_code=500, detail=error_message)
-    
+
+    except Exception as e:
+        error_message = f"Error communicating with the chatbot: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_message)
+
 @app.post("/chat")
 async def chat(conversation: Conversation):
-    # Retrieve the user's message from the conversation
-    user_message = conversation.messages[-1].content
+    user_messages = [message.content for message in conversation.messages if message.role == "user"]
+    if len(user_messages) == 0:
+        raise HTTPException(status_code=400, detail="No user messages provided in the conversation.")
 
-    # Process the user's message based on the role
-    if conversation.messages[-1].role == "user":
-        response = await process_user_input(user_message, temperature=random.uniform(0.3,0.8))
-    else:
-        # Handle system or other roles if needed
-        response = "Unhandled role"
+    temperature = float(os.getenv("TEMPERATURE", DEFAULT_TEMPERATURE))
+    response = await process_user_input(user_messages[-1], temperature)
 
-    # Create a new message object with the bot's response
     bot_message = Message(role="bot", content=response)
     conversation.messages.append(bot_message)
 
-    # Return the response
-    return {"response": response}
+    return conversation
+
+
 
 if __name__ == "__main__":
     import uvicorn
