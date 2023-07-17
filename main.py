@@ -193,7 +193,7 @@ async def chat(conversation: Conversation):
     temperature = float(os.getenv("TEMPERATURE", DEFAULT_TEMPERATURE))
     response = await process_user_input(user_messages[-1], temperature)
 
-    bot_message = Message(role="bot", content=response)
+    bot_message = Message(role="Sunny", content=response)
     conversation.messages.append(bot_message)
 
     return conversation
